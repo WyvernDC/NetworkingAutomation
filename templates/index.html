@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>LabScope | EVE-NG Diagnostics</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="LabScope home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M5 8.5 16 3l11 5.5v15L16 29 5 23.5z"/><path d="m5.5 8.8 10.5 5.4 10.5-5.4M16 14v14M10 6l11 5.5"/></svg>
+        </span>
+        <span><strong>LabScope</strong><small>NETWORK LABS</small></span>
+      </a>
+
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-target="overview" type="button"><span class="nav-icon">◫</span> Overview</button>
+        <button class="nav-link" data-target="diagnostics" type="button"><span class="nav-icon">⌁</span> Diagnostics</button>
+        <button class="nav-link" data-target="topology" type="button"><span class="nav-icon">⌘</span> Topology</button>
+        <button class="nav-link" data-target="command-output" type="button"><span class="nav-icon">›_</span> Command output</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="lab-card">
+          <span class="lab-card-icon">⌘</span>
+          <div><strong>EVE-NG lab</strong><small>Router diagnostics</small></div>
+          <span class="live-dot" title="Demo workspace"></span>
+        </div>
+        <div class="profile">
+          <div class="avatar">LS</div>
+          <div><strong>Lab session</strong><small>Student workspace</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="overview">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong>Router overview</strong></div>
+        <div class="topbar-right">
+          <span class="connection-indicator"><i></i><span id="connection-label">Demo data</span></span>
+          <span class="topbar-divider"></span>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> EVE-NG · NETWORK LAB</div>
+            <h1>Router overview</h1>
+            <p class="subtitle">Monitor device health, inspect interfaces, and run lab diagnostics.</p>
+          </div>
+          <button class="button button-primary run-button" id="run-diagnostics" type="button">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg>
+            <span>Run diagnostics</span>
+          </button>
+        </section>
+
+        <section class="api-bar" aria-label="API connection settings">
+          <span class="api-label"><span class="api-badge">{ }</span> API endpoint</span>
+          <label class="endpoint-wrap">
+            <span class="sr-only">Diagnostics API endpoint</span>
+            <input id="api-endpoint" type="text" autocomplete="url" value="/api/diagnostics" placeholder="Optional · paste a REST diagnostics endpoint to use live data">
+          </label>
+          <button class="button button-subtle" id="demo-mode" type="button">Use demo</button>
+          <span class="api-hint" title="POST JSON: {checks: string[]}. Expected response: metrics, interfaces[], diagnostics[]; optional: device, latencyHistory, commandOutputs.">POST · metrics, interfaces[], diagnostics[]</span>
+        </section>
+        <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+        <section class="stat-grid" aria-label="Device summary">
+          <article class="stat-card">
+            <div class="stat-top"><span>DEVICE STATUS</span><span class="stat-icon status-icon">⌁</span></div>
+            <div class="stat-value status-value"><span class="status-dot"></span><span id="device-status">Healthy</span></div>
+            <div class="stat-foot"><span class="muted">Last check</span><strong id="last-checked">Just now</strong></div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>INTERFACES UP</span><span class="stat-icon interface-icon">⇄</span></div>
+            <div class="stat-value"><span id="interfaces-up">3</span><span class="stat-total">/ <span id="interfaces-total">4</span></span></div>
+            <div class="stat-foot"><span class="muted">Operational links</span><span class="mini-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>LATENCY</span><span class="stat-icon latency-icon">◷</span></div>
+            <div class="stat-value"><span id="latency-value">12</span><span class="stat-unit">ms</span></div>
+            <div class="stat-foot"><span class="muted">ICMP round trip</span><span class="trend-good">Within range</span></div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span>UPTIME</span><span class="stat-icon uptime-icon">◴</span></div>
+            <div class="stat-value uptime-value" id="uptime-value">14d 06h</div>
+            <div class="stat-foot"><span class="muted">Platform</span><strong id="platform-value">Cisco IOS</strong></div>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel topology-panel" id="topology">
+            <div class="panel-heading">
+              <div><h2>Network topology</h2><p class="panel-subtitle">Live view of the lab device and connected interfaces</p></div>
+              <div class="view-switch" role="group" aria-label="Topology view">
+                <button class="view-button active" id="view-2d" type="button" aria-pressed="true">2D</button>
+                <button class="view-button" id="view-3d" type="button" aria-pressed="false">3D</button>
+              </div>
+            </div>
+            <div class="topology-stage" id="topology-stage">
+              <div class="map-label map-label-top"><span class="map-pulse"></span> LAB NETWORK</div>
+              <svg class="topology-svg" id="topology-svg" viewBox="0 0 620 270" role="img" aria-label="Router topology diagram"></svg>
+              <div class="map-scale"><span></span> Active link <span class="scale-down"></span> Down link</div>
+              <div class="map-controls"><button type="button" id="center-topology" aria-label="Center topology">⌖</button><button type="button" id="zoom-topology" aria-label="Zoom topology">+</button></div>
+            </div>
+            <div class="topology-footer">
+              <div class="device-identity"><span class="device-symbol">R</span><div><strong id="device-name">R1 · Core Router</strong><small id="device-host">EVE-NG node · IOS</small></div></div>
+              <div class="topology-legend"><span><i class="legend-up"></i> Up</span><span><i class="legend-down"></i> Down</span></div>
+            </div>
+          </article>
+
+          <article class="panel latency-panel">
+            <div class="panel-heading">
+              <div><h2>Latency trend</h2><p class="panel-subtitle">Round-trip time · last 60 minutes</p></div>
+              <span class="range-label">Last hour</span>
+            </div>
+            <div class="chart-summary"><strong><span id="chart-latency">12</span><small>ms</small></strong><span class="chart-change"><i>↘</i> Stable</span></div>
+            <div class="chart-wrap">
+              <div class="chart-y-labels" id="chart-y-labels"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
+              <svg class="latency-chart" id="latency-chart" viewBox="0 0 430 170" preserveAspectRatio="none" role="img" aria-label="Latency over time chart">
+                <defs><linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#20c8b7" stop-opacity=".24"/><stop offset="100%" stop-color="#20c8b7" stop-opacity="0"/></linearGradient></defs>
+                <g class="chart-grid"><path d="M0 10H430M0 47H430M0 84H430M0 121H430M0 158H430"/></g>
+                <path id="chart-area" class="chart-area" d=""></path>
+                <path id="chart-line" class="chart-line" d=""></path>
+                <circle id="chart-point" class="chart-point" cx="0" cy="0" r="4"></circle>
+              </svg>
+              <div class="chart-x-labels"><span>60m</span><span>45m</span><span>30m</span><span>15m</span><span>Now</span></div>
+            </div>
+            <div class="chart-footnote"><span><i class="chart-legend"></i> ICMP latency</span><span>Target <strong>&lt; 50 ms</strong></span></div>
+          </article>
+        </section>
+
+        <section class="panel diagnostics-panel" id="diagnostics">
+          <div class="panel-heading diagnostics-heading">
+            <div><h2>Interface diagnostics</h2><p class="panel-subtitle">Status reported by <code>show ip interface brief</code></p></div>
+            <button class="text-button" id="show-all-interfaces" type="button">View all <span>→</span></button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>INTERFACE</th><th>IP ADDRESS</th><th>STATUS</th><th>PROTOCOL</th><th>TRAFFIC</th><th>LAST CHECK</th></tr></thead>
+              <tbody id="interface-rows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <article class="panel checks-panel">
+            <div class="panel-heading"><div><h2>Diagnostic checks</h2><p class="panel-subtitle">Results from the latest run</p></div><span class="check-count" id="check-count">4 checks</span></div>
+            <div class="check-list" id="check-list"></div>
+          </article>
+          <article class="panel commands-panel" id="command-output">
+            <div class="panel-heading"><div><h2>Command output</h2><p class="panel-subtitle">Collected from the router</p></div><button class="text-button" id="copy-output" type="button">Copy <span>▣</span></button></div>
+            <div class="command-tabs" role="tablist" aria-label="Router commands">
+              <button class="command-tab active" data-command="interfaces" type="button" role="tab" aria-selected="true">Interfaces</button>
+              <button class="command-tab" data-command="version" type="button" role="tab" aria-selected="false">Version</button>
+              <button class="command-tab" data-command="routes" type="button" role="tab" aria-selected="false">Routes</button>
+            </div>
+            <pre class="command-output" id="command-text"><code></code></pre>
+          </article>
+        </section>
+
+        <footer class="page-footer"><span>LabScope <span class="footer-dot">·</span> EVE-NG lab activity</span><span id="footer-timestamp">Sample dashboard · No router connection</span></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
